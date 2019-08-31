@@ -23,37 +23,27 @@ namespace Word2MarkDown
                 using (WordprocessingDocument wdDoc = WordprocessingDocument.Open(file, true))
                 {
                     Body body = wdDoc.MainDocumentPart.Document.Body;
-                    var bodyChildren = body.ChildElements;
+                    var bodyChildren = body.Descendants<Paragraph>();
+                    
 
-                    foreach (OpenXmlElement bodyChild in bodyChildren)
+                    foreach (Paragraph p in bodyChildren)
                     {
-                        if (bodyChild.LocalName == "p")
+                        string header = "\n";
+                        string st = string.Empty;
+
+                        if (p.ParagraphProperties != null && p.ParagraphProperties.ParagraphStyleId != null)
                         {
-                            string header = "\n";
-
-                            if (bodyChild.HasChildren)
-                            {
-                                var pChildren = bodyChild.ChildElements;
-                                foreach (var pChild in pChildren)
-                                {
-                                    if (pChild.LocalName == "pPr")
-                                    {
-                                        var pPrChildren = pChild.ChildElements;
-                                        foreach (var pPrChild in pPrChildren)
-                                        {
-                                            if (pPrChild.LocalName == "pStyle")
-                                            {
-                                                var pstyle = pPrChild.GetAttribute("val", "http://schemas.openxmlformats.org/wordprocessingml/2006/main").Value;
-                                                header = convHeader(pstyle);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            sb.Append(header + bodyChild.InnerText);
+                            st= p.ParagraphProperties.ParagraphStyleId.Val;
                         }
+
+                        if (!string.IsNullOrEmpty(st))
+                        {
+                            header = convHeader(st);
+                        }
+
+                        sb.Append(header + p.InnerText);
                     }
+
                 }
 
                 using (var sw = new StreamWriter(mdFile, false))
