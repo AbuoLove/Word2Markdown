@@ -17,69 +17,75 @@ namespace Word2MarkDown
             string[] names = Directory.GetFiles(inDir, "*.docx");
             foreach (string file in names)
             {
-                StringBuilder sb = new StringBuilder();
                 string fileName = Path.GetFileName(file);
                 string mdFile = outDir + @"\" + fileName.Replace(".docx",".md");
+                string mdText = string.Empty;
                 using (WordprocessingDocument wdDoc = WordprocessingDocument.Open(file, true))
                 {
                     Body body = wdDoc.MainDocumentPart.Document.Body;
-                    var bodyChildren = body.Descendants<Paragraph>();
-                    
-
-                    foreach (Paragraph p in bodyChildren)
-                    {
-                        string header = "\n";
-                        string st = string.Empty;
-
-                        if (p.ParagraphProperties != null && p.ParagraphProperties.ParagraphStyleId != null)
-                        {
-                            st= p.ParagraphProperties.ParagraphStyleId.Val;
-                        }
-
-                        if (!string.IsNullOrEmpty(st))
-                        {
-                            header = convHeader(st);
-                        }
-
-                        sb.Append(header + p.InnerText);
-                    }
-
+                    mdText = convString(body);
                 }
 
                 using (var sw = new StreamWriter(mdFile, false))
                 {
-                    sw.Write(sb.ToString());
+                    sw.Write(mdText);
                 }
             }
         }
 
-        static string convHeader(string pstyle)
+        static string convString(Body body)
         {
-            string retStr = string.Empty;
+            StringBuilder sb = new StringBuilder();
+            var bodyChildren = body.Descendants<Paragraph>();
 
-            switch (pstyle)
+            foreach (Paragraph p in bodyChildren)
             {
-                case "Heading1":
-                    retStr = "\n# ";
-                    break;
-                case "Heading2":
-                    retStr = "\n## ";
-                    break;
-                case "Heading3":
-                    retStr = "\n### ";
-                    break;
-                case "Heading4":
-                    retStr = "\n#### ";
-                    break;
-                case "Heading5":
-                    retStr = "\n##### ";
-                    break;
-                default:
-                    retStr = "\n\n";
-                    break;
+                string pstyle = string.Empty;
+                string retStr = string.Empty;
+
+                if (p.ParagraphProperties != null && p.ParagraphProperties.ParagraphStyleId != null)
+                {
+                    pstyle = p.ParagraphProperties.ParagraphStyleId.Val;
+                }
+
+                if (!string.IsNullOrEmpty(pstyle))
+                {
+                    switch (pstyle)
+                    {
+                        case "Title":
+                            sb.Append("---");
+                            sb.Append("title: " + p.InnerText);
+                            sb.Append("---");
+                            break;
+                        case "Heading1":
+                            sb.Append("\n# ");
+                            sb.Append(p.InnerText);
+                            break;
+                        case "Heading2":
+                            sb.Append("\n## ");
+                            sb.Append(p.InnerText);
+                            break;
+                        case "Heading3":
+                            sb.Append("\n### ");
+                            sb.Append(p.InnerText);
+                            break;
+                        case "Heading4":
+                            sb.Append("\n#### ");
+                            sb.Append(p.InnerText);
+                            break;
+                        case "Heading5":
+                            sb.Append("\n##### ");
+                            sb.Append(p.InnerText);
+                            break;
+                        default:
+                            sb.Append("\n\n");
+                            sb.Append(p.InnerText);
+                            break;
+                    }
+                }
             }
 
-            return retStr;
+            return sb.ToString();
         }
     }
 }
